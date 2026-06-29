@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.docx
+.env
+.venv/
+.DS_Store
+*.log
+fix_revisions.py

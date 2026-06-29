@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - TestLink Tool{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">Dashboard</h1>
+    <p class="text-gray-600">Overview of your TestLink environment</p>
+</div>
+
+{% if not api_connected %}
+<div class="mb-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
+    <p class="font-bold">API Connection Required</p>
+    <p>Please <a href="{{ url_for('settings') }}" class="underline">configure your TestLink API key</a> to enable full functionality.</p>
+</div>
+{% endif %}
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm">Test Projects</p>
+                <p class="text-3xl font-bold text-indigo-600">{{ counts.projects }}</p>
+            </div>
+            <div class="bg-indigo-100 p-3 rounded-full">
+                <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                </svg>
+            </div>
+        </div>
+        <a href="{{ url_for('projects') }}" class="text-indigo-600 text-sm hover:underline mt-4 inline-block">View all projects</a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm">Test Plans</p>
+                <p class="text-3xl font-bold text-green-600">{{ counts.plans }}</p>
+            </div>
+            <div class="bg-green-100 p-3 rounded-full">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                </svg>
+            </div>
+        </div>
+        <a href="{{ url_for('plans') }}" class="text-green-600 text-sm hover:underline mt-4 inline-block">View all plans</a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm">Test Suites</p>
+                <p class="text-3xl font-bold text-purple-600">{{ counts.suites }}</p>
+            </div>
+            <div class="bg-purple-100 p-3 rounded-full">
+                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+            </div>
+        </div>
+        <a href="{{ url_for('suites') }}" class="text-purple-600 text-sm hover:underline mt-4 inline-block">View all suites</a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm">Test Cases</p>
+                <p class="text-3xl font-bold text-orange-600">{{ counts.testcases }}</p>
+            </div>
+            <div class="bg-orange-100 p-3 rounded-full">
+                <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+        </div>
+        <a href="{{ url_for('testcases') }}" class="text-orange-600 text-sm hover:underline mt-4 inline-block">View all test cases</a>
+    </div>
+</div>
+
+<div class="bg-white rounded-lg shadow-md p-6">
+    <h2 class="text-xl font-bold text-gray-800 mb-4">Recent Executions</h2>
+    {% if recent_executions %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Test Case</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Test Plan</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Build</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tester</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for exec in recent_executions %}
+                <tr>
+                    <td class="px-4 py-3 text-sm text-gray-900">{{ exec.tc_name }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-500">{{ exec.plan_name }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-500">{{ exec.build_name }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-500">{{ exec.tester or 'N/A' }}</td>
+                    <td class="px-4 py-3 text-sm">
+                        {% if exec.status == 'p' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">PASS</span>
+                        {% elif exec.status == 'f' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">FAIL</span>
+                        {% elif exec.status == 'b' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">BLOCKED</span>
+                        {% elif exec.status == 'w' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">WARNING</span>
+                        {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">NOT RUN</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-500">{{ exec.execution_ts.strftime('%Y-%m-%d %H:%M') if exec.execution_ts else 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-gray-500 text-center py-4">No recent executions found.</p>
+    {% endif %}
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
+        <div class="space-y-3">
+            <a href="{{ url_for('projects') }}?action=new" class="block w-full bg-indigo-600 text-white text-center py-2 px-4 rounded hover:bg-indigo-700">
+                Create New Project
+            </a>
+            <a href="{{ url_for('plans') }}?action=new" class="block w-full bg-green-600 text-white text-center py-2 px-4 rounded hover:bg-green-700">
+                Create New Test Plan
+            </a>
+            <a href="{{ url_for('testcases') }}?action=new" class="block w-full bg-orange-600 text-white text-center py-2 px-4 rounded hover:bg-orange-700">
+                Create New Test Case
+            </a>
+            <a href="{{ url_for('export') }}" class="block w-full bg-purple-600 text-white text-center py-2 px-4 rounded hover:bg-purple-700">
+                Export Report
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Connection Status</h2>
+        <div class="space-y-3">
+            <div class="flex items-center justify-between">
+                <span class="text-gray-600">XML-RPC API:</span>
+                {% if api_connected %}
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Connected</span>
+                {% else %}
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Disconnected</span>
+                {% endif %}
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-gray-600">Database:</span>
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Connected</span>
+            </div>
+            <a href="{{ url_for('settings') }}" class="block text-indigo-600 hover:underline mt-2">Configure API Key</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

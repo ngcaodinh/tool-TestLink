@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Req Spec Detail - TestLink Tool{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<div class="mb-4 text-sm text-gray-500">
+    <a href="{{ url_for('requirements') }}" class="hover:text-indigo-600">Requirements</a>
+    {% if spec.testproject_id and projects %}
+        {% for p in projects %}
+            {% if p.id == spec.testproject_id %}
+                <span class="mx-2">/</span>
+                <a href="{{ url_for('requirements', project_id=p.id) }}" class="hover:text-indigo-600">{{ p.name }}</a>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    <span class="mx-2">/</span>
+    <span class="text-gray-700">{{ spec.title or spec.doc_id }}</span>
+</div>
+
+<div class="mb-6 flex justify-between items-center">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-800">Req Spec: {{ spec.title or spec.doc_id }}</h1>
+        <p class="text-gray-600">Doc ID: {{ spec.doc_id }}</p>
+    </div>
+    <div class="space-x-2">
+        <a href="{{ url_for('edit_req_spec', spec_id=spec.id) }}" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+            Edit Spec
+        </a>
+        <form method="POST" action="{{ url_for('delete_req_spec_route', spec_id=spec.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this Requirement Specification and all its requirements?');">
+            <input type="hidden" name="project_id" value="{{ selected_project_id }}">
+            <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                Delete Spec
+            </button>
+        </form>
+        <button onclick="openCreateReqModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+            Create Requirement
+        </button>
+    </div>
+</div>
+
+<!-- Spec Info Card -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Specification Details</h3>
+            <div class="space-y-2">
+                <div class="flex">
+                    <span class="w-32 text-gray-500">Doc ID:</span>
+                    <span class="text-gray-900 font-medium">{{ spec.doc_id }}</span>
+                </div>
+                <div class="flex">
+                    <span class="w-32 text-gray-500">Title:</span>
+                    <span class="text-gray-900 font-medium">{{ spec.title }}</span>
+                </div>
+                <div class="flex">
+                    <span class="w-32 text-gray-500">Type:</span>
+                    <span class="text-gray-900">
+                        {% if spec.type == 'N' %}Section{% elif spec.type == 'U' %}User Requirement Specification{% elif spec.type == 'S' %}System Requirement Specification{% else %}{{ spec.type }}{% endif %}
+                    </span>
+                </div>
+                <div class="flex">
+                    <span class="w-32 text-gray-500">Revision:</span>
+                    <span class="text-gray-900">v{{ spec.revision }}</span>
+                </div>
+                <div class="flex">
+                    <span class="w-32 text-gray-500">Total Reqs:</span>
+                    <span class="text-gray-900">{{ requirements|length }}</span>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Scope</h3>
+            <div class="text-gray-700 text-sm max-h-40 overflow-y-auto bg-gray-50 p-3 rounded">
+                {% if spec.scope %}{{ spec.scope|safe }}{% else %}<span class="text-gray-400 italic">No scope defined</span>{% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Requirements Table -->
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="px-6 py-3 bg-indigo-50 border-b flex justify-between items-center">
+        <h2 class="font-semibold text-indigo-800">Requirements ({{ requirements|length }})</h2>
+    </div>
+    
+    {% if requirements %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Doc ID</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Coverage</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Author</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for req in requirements %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-sm text-gray-600">{{ req.req_doc_id }}</td>
+                    <td class="px-4 py-3 text-sm font-medium text-gray-900">
+                        {{ req.name }}
+                        {% if req.scope %}
+                        <div class="text-xs text-gray-400 mt-1 truncate max-w-xs">{{ req.scope[:80] }}{% if req.scope|length > 80 %}...{% endif %}</div>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        {% set status_map = {'V': ('Valid', 'bg-green-100 text-green-800'), 'W': ('Draft', 'bg-yellow-100 text-yellow-800'), 'R': ('Reviewed', 'bg-blue-100 text-blue-800'), 'O': ('Obsolete', 'bg-gray-100 text-gray-800')} %}
+                        {% set status_info = status_map.get(req.status, (req.status, 'bg-gray-100 text-gray-800')) %}
+                        <span class="px-2 py-1 text-xs rounded {{ status_info[1] }}">{{ status_info[0] }}</span>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-500">{{ req.type }}</td>
+                    <td class="px-4 py-3 text-sm">
+                        <div class="flex items-center">
+                            <span class="mr-2">{{ req.tc_count|default(0) }}/{{ req.expected_coverage }}</span>
+                            <div class="w-16 bg-gray-200 rounded-full h-2">
+                                {% set coverage_pct = ((req.tc_count|default(0) / req.expected_coverage * 100) if req.expected_coverage > 0 else 0) %}
+                                {% if coverage_pct > 100 %}{% set coverage_pct = 100 %}{% endif %}
+                                <div class="bg-green-500 h-2 rounded-full" style="width: {{ coverage_pct }}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-500">{{ req.author_login or '-' }}</td>
+                    <td class="px-4 py-3 text-sm">
+                        <button onclick="openAssignModal({{ req.id }}, '{{ req.name|replace("'", "\\'") }}')" class="text-indigo-600 hover:text-indigo-900 mr-2">Assign TC</button>
+                        <form method="POST" action="{{ url_for('delete_requirement', req_id=req.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this requirement?');">
+                            <input type="hidden" name="spec_id" value="{{ spec.id }}">
+                            <input type="hidden" name="project_id" value="{{ selected_project_id }}">
+                            <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-12 text-gray-500">
+        <p>No requirements in this specification yet.</p>
+        <button onclick="openCreateReqModal()" class="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+            Create First Requirement
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Create Requirement Modal -->
+<div id="createReqModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] overflow-y-auto">
+    <div class="bg-white rounded-lg p-6 w-full max-w-lg mx-auto">
+        <h2 class="text-xl font-bold mb-4">Create Requirement</h2>
+        <form action="{{ url_for('create_requirement') }}" method="POST" class="space-y-4">
+            <input type="hidden" name="project_id" value="{{ selected_project_id }}">
+            <input type="hidden" name="spec_id" value="{{ spec.id }}">
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-1">Req Doc ID *</label>
+                <input type="text" name="req_doc_id" required placeholder="e.g., REQ-FUNC-001" class="border rounded px-3 py-2 w-full">
+            </div>
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-1">Title *</label>
+                <input type="text" name="title" required placeholder="Requirement title" class="border rounded px-3 py-2 w-full">
+            </div>
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-1">Scope / Description</label>
+                <textarea name="scope" rows="3" placeholder="Detailed requirement description..." class="border rounded px-3 py-2 w-full"></textarea>
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-1">Status</label>
+                    <select name="status" class="border rounded px-3 py-2 w-full">
+                        <option value="V">Valid</option>
+                        <option value="W">Draft</option>
+                        <option value="R">Reviewed</option>
+                        <option value="O">Obsolete</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-1">Type</label>
+                    <select name="req_type" class="border rounded px-3 py-2 w-full">
+                        <option value="I">Information</option>
+                        <option value="F">Functional</option>
+                        <option value="Iface">Interface</option>
+                        <option value="P">Performance</option>
+                        <option value="S">Security</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-1">Coverage</label>
+                    <input type="number" name="expected_coverage" value="1" min="1" class="border rounded px-3 py-2 w-full">
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeCreateReqModal()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Create</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Assign Test Cases Modal -->
+<div id="assignModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] overflow-y-auto">
+    <div class="bg-white rounded-lg p-6 w-full max-w-2xl mx-auto">
+        <h2 class="text-xl font-bold mb-1">Assign Test Cases</h2>
+        <p class="text-sm text-gray-500 mb-3">Assign test cases to: <strong id="assignReqName"></strong><br><span id="assignCount" class="text-indigo-600 font-medium">0 test case(s) selected.</span></p>
+        <form id="assign-form" method="POST" action="{{ url_for('assign_testcases_to_req') }}">
+            <input type="hidden" name="req_id" id="assign_req_id" value="">
+            <input type="hidden" name="spec_id" value="{{ spec.id }}">
+            <input type="hidden" name="project_id" value="{{ selected_project_id }}">
+            <div id="hidden-tc-ids"></div>
+            
+            {% if testcases %}
+            <div class="max-h-64 overflow-y-auto border rounded mb-4">
+                <table class="min-w-full">
+                    <tbody class="divide-y divide-gray-200">
+                        {% for tc in testcases %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-2">
+                                <input type="checkbox" name="tc_cb" value="{{ tc.id }}" class="tc-cb-modal">
+                            </td>
+                            <td class="px-4 py-2 text-sm">{{ tc.id }}</td>
+                            <td class="px-4 py-2 text-sm">{{ tc.name }}</td>
+                            <td class="px-4 py-2 text-sm text-gray-500">{{ tc.suite_name }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex items-center justify-between">
+                <label class="flex items-center text-sm text-gray-600">
+                    <input type="checkbox" id="selectAllModal" onchange="toggleAllModal(this)" class="mr-2">
+                    Select All
+                </label>
+                <div class="space-x-3">
+                    <button type="button" onclick="closeAssignModal()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+                    <button type="button" onclick="submitAssign()" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Assign</button>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-gray-500">
+                <p>No test cases found in this project.</p>
+                <p class="text-sm mt-2">Create test cases first to assign them to requirements.</p>
+            </div>
+            <div class="flex justify-end">
+                <button type="button" onclick="closeAssignModal()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">Close</button>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<script>
+// Create Requirement Modal
+function openCreateReqModal() {
+    document.getElementById('createReqModal').classList.remove('hidden');
+}
+
+function closeCreateReqModal() {
+    document.getElementById('createReqModal').classList.add('hidden');
+}
+
+// Assign Modal
+function openAssignModal(reqId, reqName) {
+    document.getElementById('assign_req_id').value = reqId;
+    document.getElementById('assignReqName').textContent = reqName;
+    document.getElementById('assignModal').classList.remove('hidden');
+    updateAssignCountModal();
+}
+
+function closeAssignModal() {
+    document.getElementById('assignModal').classList.add('hidden');
+    // Clear checkboxes
+    document.querySelectorAll('.tc-cb-modal').forEach(cb => cb.checked = false);
+}
+
+function toggleAllModal(source) {
+    document.querySelectorAll('.tc-cb-modal').forEach(cb => cb.checked = source.checked);
+    updateAssignCountModal();
+}
+
+function updateAssignCountModal() {
+    const checked = document.querySelectorAll('.tc-cb-modal:checked').length;
+    const el = document.getElementById('assignCount');
+    if (el) el.textContent = checked + ' test case(s) selected.';
+}
+
+function submitAssign() {
+    const checked = document.querySelectorAll('.tc-cb-modal:checked');
+    if (checked.length === 0) {
+        alert('Please select at least one test case.');
+        return;
+    }
+
+    const container = document.getElementById('hidden-tc-ids');
+    container.innerHTML = '';
+    checked.forEach(cb => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'testcase_ids';
+        input.value = cb.value;
+        container.appendChild(input);
+    });
+
+    document.getElementById('assign-form').submit();
+}
+
+// Listen for checkbox changes
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.tc-cb-modal').forEach(cb => {
+        cb.addEventListener('change', updateAssignCountModal);
+    });
+});
+
+// Close modals on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeCreateReqModal();
+        closeAssignModal();
+    }
+});
+</script>
+{% endblock %}

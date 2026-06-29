@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TestLink Tool{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <nav class="bg-indigo-700 text-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between py-4">
+                <a href="{{ url_for('dashboard') }}" class="text-xl font-bold">TestLink Tool</a>
+                <div class="hidden md:flex space-x-4">
+                    <a href="{{ url_for('dashboard') }}" class="hover:text-indigo-200 {% if request.endpoint == 'dashboard' %}text-yellow-300{% endif %}">Dashboard</a>
+                    <a href="{{ url_for('projects') }}" class="hover:text-indigo-200 {% if request.endpoint == 'projects' %}text-yellow-300{% endif %}">Projects</a>
+                    <a href="{{ url_for('plans') }}" class="hover:text-indigo-200 {% if request.endpoint == 'plans' %}text-yellow-300{% endif %}">Test Plans</a>
+                    <a href="{{ url_for('suites') }}" class="hover:text-indigo-200 {% if request.endpoint == 'suites' %}text-yellow-300{% endif %}">Test Suites</a>
+                    <a href="{{ url_for('testcases') }}" class="hover:text-indigo-200 {% if request.endpoint == 'testcases' %}text-yellow-300{% endif %}">Test Cases</a>
+                    <a href="{{ url_for('requirements') }}" class="hover:text-indigo-200 {% if request.endpoint == 'requirements' %}text-yellow-300{% endif %}">Requirements</a>
+                    <a href="{{ url_for('executions') }}" class="hover:text-indigo-200 {% if request.endpoint == 'executions' %}text-yellow-300{% endif %}">Executions</a>
+                    <a href="{{ url_for('export') }}" class="hover:text-indigo-200 {% if request.endpoint == 'export' %}text-yellow-300{% endif %}">Export</a>
+                    <a href="{{ url_for('settings') }}" class="hover:text-indigo-200 {% if request.endpoint == 'settings' %}text-yellow-300{% endif %}">Settings</a>
+                </div>
+                <button id="mobile-menu-btn" class="md:hidden">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="mobile-menu" class="hidden md:hidden pb-4 space-y-2">
+                <a href="{{ url_for('dashboard') }}" class="block hover:text-indigo-200">Dashboard</a>
+                <a href="{{ url_for('projects') }}" class="block hover:text-indigo-200">Projects</a>
+                <a href="{{ url_for('plans') }}" class="block hover:text-indigo-200">Test Plans</a>
+                <a href="{{ url_for('suites') }}" class="block hover:text-indigo-200">Test Suites</a>
+                <a href="{{ url_for('testcases') }}" class="block hover:text-indigo-200">Test Cases</a>
+                <a href="{{ url_for('requirements') }}" class="block hover:text-indigo-200">Requirements</a>
+                <a href="{{ url_for('executions') }}" class="block hover:text-indigo-200">Executions</a>
+                <a href="{{ url_for('export') }}" class="block hover:text-indigo-200">Export</a>
+                <a href="{{ url_for('settings') }}" class="block hover:text-indigo-200">Settings</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-6">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-100 border border-red-400 text-red-700{% elif category == 'success' %}bg-green-100 border border-green-400 text-green-700{% elif category == 'warning' %}bg-yellow-100 border border-yellow-400 text-yellow-700{% else %}bg-blue-100 border border-blue-400 text-blue-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="bg-gray-800 text-gray-400 py-4 mt-8">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2026 TestLink Tool - By Nguyễn Cao Đỉnh</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>

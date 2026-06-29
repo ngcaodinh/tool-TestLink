@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Req Spec - TestLink Tool{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<div class="mb-4 text-sm text-gray-500">
+    <a href="{{ url_for('requirements') }}" class="hover:text-indigo-600">Requirements</a>
+    <span class="mx-2">/</span>
+    <a href="{{ url_for('req_spec_detail', spec_id=spec.id) }}" class="hover:text-indigo-600">{{ spec.title or spec.doc_id }}</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-700">Edit</span>
+</div>
+
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">Edit Requirement Specification</h1>
+    <p class="text-gray-600">Update the specification details</p>
+</div>
+
+<div class="bg-white rounded-lg shadow-md p-6 max-w-2xl">
+    <form action="{{ url_for('edit_req_spec', spec_id=spec.id) }}" method="POST" class="space-y-4">
+        <div>
+            <label class="block text-gray-700 text-sm font-bold mb-1">Doc ID *</label>
+            <input type="text" name="doc_id" required value="{{ spec.doc_id }}" class="border rounded px-3 py-2 w-full">
+        </div>
+        <div>
+            <label class="block text-gray-700 text-sm font-bold mb-1">Title *</label>
+            <input type="text" name="title" required value="{{ spec.title }}" class="border rounded px-3 py-2 w-full">
+        </div>
+        <div>
+            <label class="block text-gray-700 text-sm font-bold mb-1">Scope</label>
+            <textarea name="scope" rows="5" class="border rounded px-3 py-2 w-full">{{ spec.scope or '' }}</textarea>
+        </div>
+        <div>
+            <label class="block text-gray-700 text-sm font-bold mb-1">Type</label>
+            <select name="spec_type" class="border rounded px-3 py-2 w-full">
+                <option value="N" {% if spec.type == 'N' %}selected{% endif %}>Section</option>
+                <option value="U" {% if spec.type == 'U' %}selected{% endif %}>User Requirement Specification</option>
+                <option value="S" {% if spec.type == 'S' %}selected{% endif %}>System Requirement Specification</option>
+            </select>
+        </div>
+        <div class="flex justify-between items-center pt-4">
+            <a href="{{ url_for('req_spec_detail', spec_id=spec.id) }}" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
+                Cancel
+            </a>
+            <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700">
+                Save Changes
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

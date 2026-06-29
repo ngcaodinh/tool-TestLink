@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Export Report - TestLink Tool{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">Export Test Report</h1>
+    <p class="text-gray-600">Generate Word document reports from your test plan data</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-bold mb-4">Report Configuration</h2>
+        <form action="{{ url_for('export_word') }}" method="POST">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Project *</label>
+                <select name="project_id_display" id="project_select" onchange="updatePlans()" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="">Select Project</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}" {% if selected_project_id|int == project.id|int %}selected{% endif %}>{{ project.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Test Plan *</label>
+                <select name="plan_id" id="plan_select" required class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="">Select Test Plan</option>
+                    {% for plan in plans %}
+                    <option value="{{ plan.id }}" {% if selected_plan_id|int == plan.id|int %}selected{% endif %}>{{ plan.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Build (Optional)</label>
+                <select name="build_id" id="build_select" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="">All Builds</option>
+                    {% for build in builds %}
+                    <option value="{{ build.id }}" {% if selected_build_id|int == build.id|int %}selected{% endif %}>{{ build.name }}</option>
+                    {% endfor %}
+                </select>
+                <p class="text-gray-500 text-xs mt-1">Leave empty to include all builds</p>
+            </div>
+            
+            <button type="submit" class="w-full bg-purple-600 text-white py-3 px-4 rounded hover:bg-purple-700 font-bold">
+                Generate Word Report
+            </button>
+        </form>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-bold mb-4">Report Contents</h2>
+        <p class="text-gray-600 mb-4">The generated Word document will include the following sections:</p>
+        
+        <ul class="space-y-2 text-gray-700">
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">1.</span>
+                <span>Table of Contents</span>
+            </li>
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">2.</span>
+                <span>Report Information (Plan, Project, Build details)</span>
+            </li>
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">3.</span>
+                <span>Test Suite Descriptions</span>
+            </li>
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">4.</span>
+                <span>Test Case Summary (name, external ID, version)</span>
+            </li>
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">5.</span>
+                <span>Test Case Scenarios (steps as numbered list)</span>
+            </li>
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">6.</span>
+                <span>Test Case Authors</span>
+            </li>
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">7.</span>
+                <span>Test Case Keywords</span>
+            </li>
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">8.</span>
+                <span>Test Case Custom Fields</span>
+            </li>
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">9.</span>
+                <span>Test Case Related Requirements</span>
+            </li>
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">10.</span>
+                <span>Execution Notes</span>
+            </li>
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">11.</span>
+                <span>Step Execution Notes</span>
+            </li>
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">12.</span>
+                <span>Test Results (color-coded: Pass/Fail/Blocked)</span>
+            </li>
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">13.</span>
+                <span>Step Execution Results</span>
+            </li>
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">14.</span>
+                <span>Build Custom Fields</span>
+            </li>
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">15.</span>
+                <span>Metrics Summary (Pass Rate, Fail Rate, etc.)</span>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<div class="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4">
+    <p class="text-blue-700">
+        <strong>Note:</strong> Reports are generated using data from your TestLink database. 
+        Ensure that the TestLink XML-RPC API and MySQL database are accessible for complete data.
+    </p>
+</div>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - TestLink Tool{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">Settings</h1>
+    <p class="text-gray-600">Configure your TestLink API connection</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-bold mb-4">API Configuration</h2>
+        <form action="{{ url_for('settings') }}" method="POST">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="api_key">TestLink API Key</label>
+                <input type="password" name="api_key" id="api_key" value="{{ api_key }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Enter your TestLink API key">
+                <p class="text-gray-500 text-xs mt-1">Find your API key in TestLink: My Settings → API Interface</p>
+            </div>
+            
+            <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Save API Key</button>
+        </form>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-bold mb-4">Connection Information</h2>
+        <div class="space-y-3">
+            <div>
+                <span class="text-gray-500 text-sm">XML-RPC URL:</span>
+                <p class="font-mono text-sm bg-gray-100 p-2 rounded">http://localhost/testlink-1.9.16/lib/api/xmlrpc/v1/xmlrpc.php</p>
+            </div>
+            <div>
+                <span class="text-gray-500 text-sm">Database Host:</span>
+                <p class="font-mono text-sm bg-gray-100 p-2 rounded">localhost</p>
+            </div>
+            <div>
+                <span class="text-gray-500 text-sm">Database Name:</span>
+                <p class="font-mono text-sm bg-gray-100 p-2 rounded">testlink</p>
+            </div>
+            <div>
+                <span class="text-gray-500 text-sm">Database User:</span>
+                <p class="font-mono text-sm bg-gray-100 p-2 rounded">testlink</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-6 bg-yellow-50 border-l-4 border-yellow-500 p-4">
+    <h3 class="text-yellow-700 font-bold">How to get your API Key</h3>
+    <ol class="mt-2 text-yellow-700 space-y-1 list-decimal list-inside">
+        <li>Log in to your TestLink application</li>
+        <li>Click on your username (top right corner)</li>
+        <li>Go to "My Settings"</li>
+        <li>Find the "API Interface" tab</li>
+        <li>Copy your API key and paste it above</li>
+    </ol>
+</div>
+
+<div class="mt-6">
+    <h2 class="text-xl font-bold mb-4">TestLink Version Info</h2>
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <table class="min-w-full">
+            <tbody class="divide-y divide-gray-200">
+                <tr>
+                    <td class="px-4 py-2 text-gray-500">TestLink Version</td>
+                    <td class="px-4 py-2 font-medium">1.9.16</td>
+                </tr>
+                <tr>
+                    <td class="px-4 py-2 text-gray-500">XML-RPC API</td>
+                    <td class="px-4 py-2 font-medium">Enabled</td>
+                </tr>
+                <tr>
+                    <td class="px-4 py-2 text-gray-500">REST API</td>
+                    <td class="px-4 py-2 font-medium text-orange-600">Limited (No builds/platforms/reports/execution query)</td>
+                </tr>
+                <tr>
+                    <td class="px-4 py-2 text-gray-500">Authentication</td>
+                    <td class="px-4 py-2 font-medium">API Key via Basic Auth</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

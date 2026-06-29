@@ -1,0 +1,121 @@
+/* Custom styles for TestLink Tool */
+
+/* Smooth transitions */
+a, button {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Card hover effects */
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Status badges */
+.status-pass {
+    background-color: #10b981;
+    color: white;
+}
+
+.status-fail {
+    background-color: #ef4444;
+    color: white;
+}
+
+.status-blocked {
+    background-color: #f97316;
+    color: white;
+}
+
+.status-warning {
+    background-color: #eab308;
+    color: white;
+}
+
+.status-not-run {
+    background-color: #6b7280;
+    color: white;
+}
+
+/* Table improvements */
+table {
+    border-collapse: collapse;
+}
+
+th {
+    position: sticky;
+    top: 0;
+    background: #f9fafb;
+    z-index: 10;
+}
+
+/* Form focus states */
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Modal backdrop blur */
+.modal-backdrop {
+    backdrop-filter: blur(4px);
+}
+
+/* Loading spinner */
+.spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #6366f1;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Sidebar active state */
+.nav-link {
+    @apply block px-4 py-2 rounded transition-colors;
+}
+
+.nav-link:hover {
+    @apply bg-indigo-800;
+}
+
+.nav-link.active {
+    @apply bg-indigo-800 text-yellow-300;
+}
+
+/* Print styles */
+@media print {
+    nav, footer, button, .no-print {
+        display: none !important;
+    }
+    
+    .container {
+        max-width: 100%;
+        padding: 0;
+    }
+}

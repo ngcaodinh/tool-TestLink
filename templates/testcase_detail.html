@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Test Case Details{% endblock %}
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold text-gray-800">Test Case Details</h1>
+        <a href="{{ url_for('testcases') }}" class="text-indigo-600 hover:text-indigo-800 text-sm">&larr; Back to Test Cases</a>
+    </div>
+
+    {% if error %}
+    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+        Error: {{ error }}
+    </div>
+    {% endif %}
+
+    {% if testcase %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <label class="block text-gray-500 text-sm">Test Case ID</label>
+            <p class="text-gray-900 font-medium text-lg">{{ testcase.tc_id }}</p>
+        </div>
+        <div>
+            <label class="block text-gray-500 text-sm">Name</label>
+            <p class="text-gray-900 font-medium text-lg">{{ testcase.name }}</p>
+        </div>
+        <div>
+            <label class="block text-gray-500 text-sm">Project</label>
+            <p class="text-gray-900">{{ testcase.project_name }} (ID: {{ testcase.project_id }})</p>
+        </div>
+        <div>
+            <label class="block text-gray-500 text-sm">Suite</label>
+            <p class="text-gray-900">{{ testcase.suite_name }} (ID: {{ testcase.suite_id }})</p>
+        </div>
+        <div>
+            <label class="block text-gray-500 text-sm">Node Order</label>
+            <p class="text-gray-900">{{ testcase.node_order }}</p>
+        </div>
+        <div>
+            <label class="block text-gray-500 text-sm">Node Type</label>
+            <p class="text-gray-900">{{ testcase.node_type_id }} (Test Case)</p>
+        </div>
+    </div>
+    {% else %}
+    <p class="text-gray-500">Test case not found.</p>
+    {% endif %}
+</div>
+{% endblock %}

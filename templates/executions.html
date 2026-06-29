@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}Executions - TestLink Tool{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">Test Executions</h1>
+    <p class="text-gray-600">Navigate and report test execution results</p>
+</div>
+
+<form id="execFilterForm" method="GET" action="{{ url_for('executions') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="flex flex-col">
+        <label class="text-gray-700 text-sm font-bold mb-2">Project</label>
+        <select name="project_id" onchange="onProjectChange()" class="border rounded px-3 py-2">
+            <option value="">Select Project</option>
+            {% for project in projects %}
+            <option value="{{ project.id }}" {% if selected_project_id|int == project.id|int %}selected{% endif %}>{{ project.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="flex flex-col">
+        <label class="text-gray-700 text-sm font-bold mb-2">Test Plan</label>
+        <select name="plan_id" id="planSelect" onchange="onPlanChange()" class="border rounded px-3 py-2">
+            <option value="">Select Plan</option>
+            {% for plan in plans %}
+            <option value="{{ plan.id }}" {% if selected_plan_id|int == plan.id|int %}selected{% endif %}>{{ plan.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="flex flex-col">
+        <label class="text-gray-700 text-sm font-bold mb-2">Build</label>
+        <div class="flex space-x-2">
+            <select name="build_id" id="buildSelect" onchange="document.getElementById('execFilterForm').submit()" class="flex-1 border rounded px-3 py-2">
+                <option value="">All Builds</option>
+                {% for build in builds %}
+                <option value="{{ build.id }}" {% if selected_build_id|int == build.id|int %}selected{% endif %}>{{ build.name }}</option>
+                {% endfor %}
+            </select>
+            {% if selected_plan_id %}
+            <button type="button" onclick="document.getElementById('createBuildModal').classList.remove('hidden')" class="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm" title="Create Build">+</button>
+            {% endif %}
+        </div>
+    </div>
+</form>
+
+<script>
+function onProjectChange() {
+    document.getElementById('planSelect').value = '';
+    document.getElementById('buildSelect').value = '';
+    document.getElementById('execFilterForm').submit();
+}
+function onPlanChange() {
+    document.getElementById('buildSelect').value = '';
+    document.getElementById('execFilterForm').submit();
+}
+</script>
+
+<div id="createBuildModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Create New Build</h2>
+        <form action="{{ url_for('create_build') }}" method="POST">
+            <input type="hidden" name="project_id" value="{{ selected_project_id or '' }}">
+            <input type="hidden" name="plan_id" value="{{ selected_plan_id or '' }}">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="build_name">Build Name *</label>
+                <input type="text" name="build_name" id="build_name" required placeholder="e.g., Version 1.0" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="notes">Notes</label>
+                <textarea name="notes" id="notes" rows="2" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="document.getElementById('createBuildModal').classList.add('hidden')" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Create</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if selected_plan_id and selected_build_id %}
+<!-- Save All Form -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-bold mb-4">Batch Execution Results</h2>
+    <p class="text-gray-600 mb-4">Set status and notes for all test cases, then save all at once.</p>
+    
+    <form id="saveAllForm" action="{{ url_for('save_all_results') }}" method="POST">
+        <input type="hidden" name="project_id" value="{{ selected_project_id or '' }}">
+        <input type="hidden" name="plan_id" value="{{ selected_plan_id }}">
+        <input type="hidden" name="build_id" value="{{ selected_build_id }}">
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-12">#</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Test Case ID</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-32">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for tc in testcases %}
+                    {% set ext_id = tc.get('full_external_id', tc.get('external_id', '')) %}
+                    {% set exec_status = tc.get('executionStatus', 'n') %}
+                    <tr>
+                        <td class="px-4 py-2 text-sm text-gray-500">{{ loop.index }}</td>
+                        <td class="px-4 py-2 text-sm text-gray-900 font-mono">{{ ext_id }}</td>
+                        <td class="px-4 py-2 text-sm text-gray-900">{{ tc.name }}</td>
+                        <td class="px-4 py-2">
+                            <select name="status_{{ ext_id }}" class="border rounded px-2 py-1 text-sm w-full">
+                                <option value="n" {% if exec_status == 'n' %}selected{% endif %}>Not Run</option>
+                                <option value="p" {% if exec_status == 'p' %}selected{% endif %}>Pass</option>
+                                <option value="f" {% if exec_status == 'f' %}selected{% endif %}>Fail</option>
+                                <option value="b" {% if exec_status == 'b' %}selected{% endif %}>Blocked</option>
+                                <option value="w" {% if exec_status == 'w' %}selected{% endif %}>Warning</option>
+                            </select>
+                        </td>
+                        <td class="px-4 py-2">
+                            <input type="text" name="notes_{{ ext_id }}" placeholder="Optional notes..." class="border rounded px-2 py-1 text-sm w-full">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="mt-4 flex items-center space-x-4">
+            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 font-medium">
+                Save All Results
+            </button>
+            <span class="text-gray-500 text-sm">{{ testcases|length }} test case(s) in this plan</span>
+        </div>
+    </form>
+</div>
+
+<!-- Export Word Button -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-bold mb-4">Export Report</h2>
+    <form action="{{ url_for('export_word') }}" method="POST">
+        <input type="hidden" name="plan_id" value="{{ selected_plan_id }}">
+        <input type="hidden" name="build_id" value="{{ selected_build_id }}">
+        <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 font-medium">
+            Export Word Report
+        </button>
+    </form>
+</div>
+{% endif %}
+
+<!-- Original Report Single Result Form -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-bold mb-4">Report Single Test Result</h2>
+    <form action="{{ url_for('report_result') }}" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input type="hidden" name="project_id" value="{{ selected_project_id or '' }}">
+        <input type="hidden" name="plan_id" value="{{ selected_plan_id or '' }}">
+        <input type="hidden" name="build_id" value="{{ selected_build_id or '' }}">
+
+        <div>
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="case_external_id">Test Case External ID *</label>
+            <input type="text" name="case_external_id" id="case_external_id" required placeholder="e.g., PRJ-1" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+
+        <div>
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="status">Result Status *</label>
+            <select name="status" id="status" required class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                <option value="">Select Status</option>
+                <option value="p">Pass</option>
+                <option value="f">Fail</option>
+                <option value="b">Blocked</option>
+                <option value="w">Warning</option>
+                <option value="n">Not Run</option>
+            </select>
+        </div>
+
+        <div class="md:col-span-2">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="notes">Notes</label>
+            <textarea name="notes" id="notes" rows="2" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+        </div>
+
+        <div>
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">Report Result</button>
+        </div>
+    </form>
+</div>
+
+<!-- Test Cases List (Read-only view) -->
+<div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+    <h2 class="text-xl font-bold p-4 border-b">Test Cases in Plan</h2>
+    {% if testcases %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">External ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Version</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tester</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Run</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for tc in testcases %}
+                <tr>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ tc.get('full_external_id', tc.get('external_id', '')) }}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ tc.name }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ tc.version }}</td>
+                    <td class="px-6 py-4 text-sm">
+                        {% set status = tc.get('executionStatus', '') %}
+                        {% if status == 'p' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">PASS</span>
+                        {% elif status == 'f' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">FAIL</span>
+                        {% elif status == 'b' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">BLOCKED</span>
+                        {% elif status == 'w' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">WARNING</span>
+                        {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">NOT RUN</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ tc.get('tester', '') or 'N/A' }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">N/A</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="p-8 text-center text-gray-500">
+        <p>No test cases found in this plan. Select a project and test plan first.</p>
+    </div>
+    {% endif %}
+</div>
+
+{% if executions %}
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <h2 class="text-xl font-bold p-4 border-b">Execution History</h2>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Test Case</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Build</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tester</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for exec in executions %}
+                <tr>
+                    <td class="px-6 py-4 text-sm text-gray-900">{{ exec.get('testcase', {}).get('name', '') if exec.get('testcase') else 'N/A' }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ exec.build_name if exec.get('build_name') else 'N/A' }}</td>
+                    <td class="px-6 py-4 text-sm">
+                        {% set status = exec.get('status', '') %}
+                        {% if status == 'p' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">PASS</span>
+                        {% elif status == 'f' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">FAIL</span>
+                        {% elif status == 'b' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">BLOCKED</span>
+                        {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ exec.get('tester', '') or 'N/A' }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ exec.get('execution_ts', '') or 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

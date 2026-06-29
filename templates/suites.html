@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Test Suites - TestLink Tool{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-800">Test Suites</h1>
+        <p class="text-gray-600">Organize your test cases into suites</p>
+    </div>
+    <button onclick="document.getElementById('createModal').classList.remove('hidden')" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+        Create Test Suite
+    </button>
+</div>
+
+<div class="mb-4">
+    <form method="GET" action="{{ url_for('suites') }}" class="flex items-center space-x-4">
+        <label class="text-gray-700">Filter by Project:</label>
+        <select name="project_id" onchange="this.form.submit()" class="border rounded px-3 py-2">
+            <option value="">All Projects</option>
+            {% for project in projects %}
+            <option value="{{ project.id }}" {% if selected_project_id|int == project.id|int %}selected{% endif %}>{{ project.name }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<div id="createModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Create New Test Suite</h2>
+        <form action="{{ url_for('create_suite') }}" method="POST">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="project_id">Project *</label>
+                <select name="project_id" id="project_id" required class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="">Select a project</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}" data-prefix="{{ project.prefix }}">{{ project.name }}</option>
+                    {% endfor %}
+                </select>
+                <input type="hidden" name="project_prefix" id="project_prefix" value="">
+                <script>
+                document.querySelector('form[action="{{ url_for("create_suite") }}"]').addEventListener('submit', function() {
+                    var sel = document.getElementById('project_id');
+                    var opt = sel.options[sel.selectedIndex];
+                    document.getElementById('project_prefix').value = opt ? opt.getAttribute('data-prefix') : '';
+                });
+                </script>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="parent_suite_id">Parent Suite (Optional)</label>
+                <select name="parent_suite_id" id="parent_suite_id" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="">None (Top Level)</option>
+                    {% for suite in suites %}
+                    <option value="{{ suite.id }}">{{ suite.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="name">Suite Name *</label>
+                <input type="text" name="name" id="name" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="description">Description</label>
+                <textarea name="description" id="description" rows="3" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="document.getElementById('createModal').classList.add('hidden')" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+                <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">Create</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+    {% if suites %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Details</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for suite in suites %}
+                <tr>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ suite.id }}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ suite.name }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        {% if suite.details %}
+                            {{ suite.details[:50] }}{% if suite.details|length > 50 %}...{% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-sm">
+                        <a href="{{ url_for('testcases') }}?project_id={{ selected_project_id }}&suite_id={{ suite.id }}" class="text-purple-600 hover:text-purple-900">View Test Cases</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="p-8 text-center text-gray-500">
+        <p>No test suites found. Create your first test suite to get started.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

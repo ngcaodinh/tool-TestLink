@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+
+{% block title %}Test Cases - TestLink Tool{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-800">Test Cases</h1>
+        <p class="text-gray-600">Create and manage test cases</p>
+    </div>
+    <div class="space-x-2">
+        <button onclick="openModal()" class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700">
+            Tạo mới Test Case
+        </button>
+        <button onclick="openJsonModal()" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+            Thêm bằng Json
+        </button>
+        <button onclick="openAssignReqModal()" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+            Assign to Requirement
+        </button>
+    </div>
+</div>
+
+<!-- Bulk Assign Form (selected testcases submitted when user clicks Assign button in modal) -->
+<form id="bulk-assign-form-source" method="POST" action="{{ url_for('assign_testcases_to_spec') }}">
+    <input type="hidden" name="project_id" value="{{ selected_project_id }}">
+    <div id="hidden-tc-ids-source"></div>
+</form>
+
+<div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+    <form method="GET" action="{{ url_for('testcases') }}" class="flex items-center space-x-4">
+        <label class="text-gray-700">Project:</label>
+        <select name="project_id" onchange="this.form.submit()" class="border rounded px-3 py-2">
+            <option value="">Select Project</option>
+            {% for project in projects %}
+            <option value="{{ project.id }}" {% if selected_project_id|int == project.id|int %}selected{% endif %}>{{ project.name }}</option>
+            {% endfor %}
+        </select>
+    </form>
+    <form method="GET" action="{{ url_for('testcases') }}" class="flex items-center space-x-4">
+        <input type="hidden" name="project_id" value="{{ selected_project_id }}">
+        <label class="text-gray-700">Suite:</label>
+        <select name="suite_id" onchange="this.form.submit()" class="border rounded px-3 py-2">
+            <option value="">Select Suite</option>
+            {% for suite in suites %}
+            <option value="{{ suite.id }}" {% if selected_suite_id|int == suite.id|int %}selected{% endif %}>{{ suite.name }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<div id="createModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] overflow-y-auto">
+    <div class="bg-white rounded-lg p-6 w-full max-w-2xl mx-auto">
+        <h2 class="text-xl font-bold mb-4">Create New Test Case</h2>
+        <form action="{{ url_for('create_testcase') }}" method="POST">
+            <input type="hidden" name="redirect_project_id" id="redirect_project_id" value="{{ selected_project_id }}">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="suite_id">Test Suite *</label>
+                    <select name="suite_id" id="suite_id" required class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <option value="">Select a suite</option>
+                        {% for suite in suites %}
+                        <option value="{{ suite.id }}">{{ suite.name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if not suites %}
+                    <p class="text-sm text-red-500 mt-1">No suites available. Please select a project first.</p>
+                    {% endif %}
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="plan_id">Add to Test Plan (Optional)</label>
+                    <select name="plan_id" id="modal_plan_id" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <option value="">Do not add to plan</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="name">Test Case Name *</label>
+                <input type="text" name="name" id="name" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="summary">Summary</label>
+                <textarea name="summary" id="summary" rows="2" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Test Steps</label>
+                <div id="steps-container">
+                    <div class="step-row flex flex-col md:flex-row gap-2 mb-2">
+                        <input type="text" name="step_actions" placeholder="Step action" class="shadow border rounded py-2 px-3 flex-1">
+                        <input type="text" name="step_results" placeholder="Expected result" class="shadow border rounded py-2 px-3 flex-1">
+                        <button type="button" onclick="removeStep(this)" class="bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600">X</button>
+                    </div>
+                </div>
+                <button type="button" onclick="addStep()" class="mt-2 bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 text-sm">+ Add Step</button>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="expected_results">Default Expected Result</label>
+                <textarea name="expected_results" id="expected_results" rows="2" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="keywords">Keywords (comma separated)</label>
+                <input type="text" name="keywords" id="keywords" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="e.g., smoke, regression, critical">
+            </div>
+
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeModal()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+                <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700">Create</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="jsonModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] overflow-y-auto">
+    <div class="bg-white rounded-lg p-6 w-full max-w-3xl mx-auto">
+        <h2 class="text-xl font-bold mb-4">Bulk Create Test Cases (JSON)</h2>
+        <form action="{{ url_for('create_testcases_bulk') }}" method="POST">
+            <input type="hidden" name="project_id" value="{{ selected_project_id }}">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Test Suite *</label>
+                <select name="suite_id" required class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="">Select a suite</option>
+                    {% for suite in suites %}
+                    <option value="{{ suite.id }}">{{ suite.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">JSON</label>
+                <textarea name="json_data" id="json_data" rows="12" required
+                          placeholder='[
+  {"name": "TC 1", "summary": "Description 1", "steps": ["Step 1", "Step 2"]},
+  {"name": "TC 2", "summary": "Description 2"}
+]'
+                          class="shadow border rounded w-full py-2 px-3 text-gray-700 font-mono text-sm leading-tight focus:outline-none focus:shadow-outline"></textarea>
+                <p class="text-gray-500 text-xs mt-1">Format: array of objects with <code>name</code> (required), <code>summary</code>, and optional <code>steps</code> array.</p>
+            </div>
+            <div class="flex items-center justify-between">
+                <button type="button" onclick="closeJsonModal()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+                <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">Create All</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Assign Test Cases to Requirement Modal -->
+<div id="assignReqModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] overflow-y-auto">
+    <div class="bg-white rounded-lg p-6 w-full max-w-2xl mx-auto">
+        <h2 class="text-xl font-bold mb-1">Assign Test Cases to Requirement</h2>
+        <p class="text-sm text-gray-500 mb-3">
+            Select requirements to link the checked test cases to.<br>
+            Project: <strong>{{ selected_project_id }}</strong> —
+            <span id="assignCount" class="text-indigo-600 font-medium">0 test case(s) selected.</span>
+        </p>
+        <form id="assign-req-form" method="POST" action="{{ url_for('assign_tc_to_req_route') }}">
+            <input type="hidden" name="project_id" value="{{ selected_project_id }}">
+            <input type="hidden" name="spec_id" id="assign_spec_id" value="">
+            <div id="hidden-tc-ids-modal"></div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">1. Select Requirement Specification *</label>
+                <select id="spec-select" onchange="onSpecChange(this.value)" required class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="">Select a requirement specification</option>
+                    {% for spec in req_specs %}
+                    <option value="{{ spec.id }}">{{ spec.name or spec.doc_id }}</option>
+                    {% endfor %}
+                </select>
+                {% if not req_specs %}
+                <p class="text-sm text-red-500 mt-2">
+                    <strong>No requirement specifications found</strong> in this project.
+                    <br>Go to <a href="{{ url_for('requirements', project_id=selected_project_id) }}" class="text-indigo-600 underline">Requirements</a> page to create one first.
+                </p>
+                {% endif %}
+            </div>
+
+            <div class="mb-4" id="req-select-container" style="display:none;">
+                <label class="block text-gray-700 text-sm font-bold mb-2">2. Select Requirement(s) *</label>
+                <div class="max-h-48 overflow-y-auto border rounded p-3 space-y-2" id="req-list">
+                </div>
+                <div class="mt-2">
+                    <label class="flex items-center text-sm text-gray-600">
+                        <input type="checkbox" id="selectAllReq" onchange="toggleAllReq(this)" class="mr-2">
+                        Select All Requirements
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <button type="button" onclick="closeAssignReqModal()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+                <button type="button" id="assignBtn" onclick="submitAssignAssign()" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700" disabled>Assign</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+    {% if testcases %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <input type="checkbox" id="selectAllTC" onchange="toggleAllTC(this)">
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Version</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Summary</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for tc in testcases %}
+                <tr>
+                    <td class="px-6 py-4">
+                        <input type="checkbox" name="testcase_cb" value="{{ tc.tc_id }}" class="tc-cb">
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ tc.tc_id }}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ tc.name }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ tc.version }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        {% if tc.summary %}
+                            {{ tc.summary[:50] }}{% if tc.summary|length > 50 %}...{% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-sm">
+                        <a href="{{ url_for('testcase_detail', tc_id=tc.tc_id) }}" class="text-orange-600 hover:text-orange-900">View</a>
+                        <form method="POST" action="{{ url_for('delete_testcase', tc_id=tc.tc_id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this test case?');">
+                            <input type="hidden" name="project_id" value="{{ selected_project_id }}">
+                            <input type="hidden" name="suite_id" value="{{ selected_suite_id }}">
+                            <button type="submit" class="text-red-600 hover:text-red-900 ml-2">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+const plansData = {};
+{% for plan in plans %}
+plansData[{{ plan.id }}] = { id: {{ plan.id }}, name: {{ plan.name|tojson }} };
+{% endfor %}
+
+function closeModal() {
+    document.getElementById('createModal').classList.add('hidden');
+}
+
+function openJsonModal() {
+    document.getElementById('jsonModal').classList.remove('hidden');
+}
+
+function closeJsonModal() {
+    document.getElementById('jsonModal').classList.add('hidden');
+}
+
+function openModal() {
+    const modal = document.getElementById('createModal');
+    modal.classList.remove('hidden');
+    const projectSelect = document.querySelector('select[name="project_id"]');
+    if (projectSelect && projectSelect.value) {
+        updatePlanDropdown(projectSelect.value);
+    }
+}
+
+function updatePlanDropdown(projectId) {
+    const planSelect = document.getElementById('modal_plan_id');
+    if (!planSelect) return;
+    planSelect.innerHTML = '<option value="">Do not add to plan</option>';
+    if (projectId) {
+        Object.values(plansData).forEach(function(plan) {
+            const opt = document.createElement('option');
+            opt.value = plan.id;
+            opt.textContent = plan.name;
+            planSelect.appendChild(opt);
+        });
+    }
+}
+
+function addStep() {
+    const container = document.getElementById('steps-container');
+    const newStep = document.createElement('div');
+    newStep.className = 'step-row flex flex-col md:flex-row gap-2 mb-2';
+    newStep.innerHTML = '<input type="text" name="step_actions" placeholder="Step action" class="shadow border rounded py-2 px-3 flex-1"><input type="text" name="step_results" placeholder="Expected result" class="shadow border rounded py-2 px-3 flex-1"><button type="button" onclick="removeStep(this)" class="bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600">X</button>';
+    container.appendChild(newStep);
+}
+
+function removeStep(btn) {
+    const container = document.getElementById('steps-container');
+    if (container.children.length > 1) {
+        btn.parentElement.remove();
+    }
+}
+
+function toggleAllTC(source) {
+    const cbs = document.querySelectorAll('.tc-cb');
+    cbs.forEach(cb => cb.checked = source.checked);
+    updateAssignCount();
+}
+
+function updateAssignCount() {
+    const checked = document.querySelectorAll('.tc-cb:checked').length;
+    const el = document.getElementById('assignCount');
+    if (el) el.textContent = checked + ' test case(s) selected.';
+}
+
+function openAssignReqModal() {
+    const checked = document.querySelectorAll('.tc-cb:checked');
+    if (checked.length === 0) {
+        alert('Please select at least one test case.');
+        return;
+    }
+    updateAssignCount();
+    document.getElementById('assignReqModal').classList.remove('hidden');
+}
+
+function closeAssignReqModal() {
+    document.getElementById('assignReqModal').classList.add('hidden');
+}
+
+function submitAssign(e) {
+    e.preventDefault();
+    const checked = document.querySelectorAll('.tc-cb:checked');
+    if (checked.length === 0) {
+        alert('Please select at least one test case.');
+        return;
+    }
+
+    const container = document.getElementById('hidden-tc-ids-source');
+    container.innerHTML = '';
+    checked.forEach(cb => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'testcase_ids';
+        input.value = cb.value;
+        container.appendChild(input);
+    });
+
+    document.getElementById('bulk-assign-form-source').submit();
+}
+
+const reqSpecReqsMap = {};
+{% for spec in req_specs %}
+reqSpecReqsMap[{{ spec.id }}] = [
+    {% for req in requirements %}
+    {% if req.spec_id == spec.id %}
+    { id: {{ req.id }}, doc_id: {{ req.req_doc_id|tojson }}, title: {{ req.name|tojson }} },
+    {% endif %}
+    {% endfor %}
+];
+{% endfor %}
+
+function onSpecChange(specId) {
+    const container = document.getElementById('req-select-container');
+    const list = document.getElementById('req-list');
+    const assignBtn = document.getElementById('assignBtn');
+
+    if (!specId) {
+        container.style.display = 'none';
+        assignBtn.disabled = true;
+        return;
+    }
+
+    list.innerHTML = '';
+    const reqs = reqSpecReqsMap[specId] || [];
+
+    if (reqs.length === 0) {
+        list.innerHTML = '<p class="text-sm text-gray-400">No requirements found in this specification.</p>';
+    } else {
+        reqs.forEach(function(req) {
+            const label = document.createElement('label');
+            label.className = 'flex items-center text-sm';
+            label.innerHTML = '<input type="checkbox" name="req_ids" value="' + req.id + '" class="req-cb mr-2">' + (req.doc_id ? req.doc_id + ' — ' : '') + req.title;
+            list.appendChild(label);
+        });
+
+        list.querySelectorAll('.req-cb').forEach(function(cb) {
+            cb.addEventListener('change', updateReqBtnState);
+        });
+    }
+
+    document.getElementById('assign_spec_id').value = specId;
+    container.style.display = 'block';
+    updateReqBtnState();
+}
+
+function updateReqBtnState() {
+    const checkedReqs = document.querySelectorAll('.req-cb:checked').length;
+    const btn = document.getElementById('assignBtn');
+    btn.disabled = checkedReqs === 0;
+}
+
+function toggleAllReq(source) {
+    document.querySelectorAll('.req-cb').forEach(cb => cb.checked = source.checked);
+    updateReqBtnState();
+}
+
+function submitAssignAssign() {
+    const checkedTC = document.querySelectorAll('.tc-cb:checked');
+    const checkedReq = document.querySelectorAll('.req-cb:checked');
+
+    if (checkedTC.length === 0) {
+        alert('Please select at least one test case.');
+        return;
+    }
+    if (checkedReq.length === 0) {
+        alert('Please select at least one requirement.');
+        return;
+    }
+
+    const tcContainer = document.getElementById('hidden-tc-ids-modal');
+    tcContainer.innerHTML = '';
+    checkedTC.forEach(cb => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'testcase_ids';
+        input.value = cb.value;
+        tcContainer.appendChild(input);
+    });
+
+    document.getElementById('assign-req-form').submit();
+}
+
+// Listen for checkbox changes
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.tc-cb').forEach(cb => {
+        cb.addEventListener('change', updateAssignCount);
+    });
+});
+</script>
+{% endblock %}
