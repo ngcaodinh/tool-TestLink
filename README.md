@@ -1,8 +1,6 @@
 # TestLink Tool
 
-> Web-based management UI for **TestLink 1.9.16** — a student project that wraps the TestLink XML-RPC API and direct MySQL access into a modern, dashboard-driven workflow.
-
-> Giao diện web quản lý **TestLink 1.9.16** — đồ án sinh viên gói gọn XML-RPC API của TestLink cùng truy vấn MySQL trực tiếp vào một quy trình làm việc hiện đại, trực quan.
+> Web-based management UI for **TestLink 1.9.16** — a project that wraps the TestLink XML-RPC API and direct MySQL access into a modern, dashboard-driven workflow.
 
 ---
 
@@ -162,8 +160,8 @@ Read-heavy views (suites tree, requirements, executions) go through MySQL direct
 
 ## 📜 License / Giấy phép
 
-Student project. Use freely with your own TestLink installation.
-Đồ án sinh viên. Sử dụng tự do cùng cài đặt TestLink của bạn.
+ Use freely with your own TestLink installation.
+ Sử dụng tự do cùng cài đặt TestLink của bạn.
 
 ---
 
